@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>A Little Story for CNN</title>
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    html, body, #root { height: 100%; }
+    .h-dvh { height: 100dvh; }
+  </style>
+</head>
+<body class="bg-slate-950">
+  <div id="root"></div>
+
+  <!-- React + ReactDOM + Babel (for inline JSX) -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- Framer Motion UMD -->
+  <script src="https://unpkg.com/framer-motion/dist/framer-motion.umd.js"></script>
+  <!-- canvas-confetti UMD -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+    const { motion, AnimatePresence } = window.FramerMotion;
+    const confetti = window.confetti;
+
+    const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+
+    function App(){
+      const [scene, setScene] = useState(0);
+      const goNext = () => setScene(s => clamp(s+1, 0, 4));
+      const goPrev = () => setScene(s => clamp(s-1, 0, 4));
+
+      return (
+        <div className="w-full h-dvh bg-slate-950 text-slate-100 overflow-hidden select-none">
+          <TopBar scene={scene} goPrev={goPrev} goNext={goNext} />
+          <AnimatePresence mode="wait">
+            {scene === 0 && <SceneBus key="bus" onNext={goNext} />}
+            {scene === 1 && <SceneBench key="bench" onNext={goNext} />}
+            {scene === 2 && <SceneCar key="car" onNext={goNext} />}
+            {scene === 3 && <SceneKitchen key="cook" onNext={goNext} />}
+            {scene === 4 && <SceneFinal key="final" />}
+          </AnimatePresence>
+        </div>
+      );
+    }
+
+    function TopBar({ scene, goPrev, goNext }){
+      return (
+        <div className="absolute top-0 inset-x-0 z-50 flex items-center justify-between p-3">
+          <div className="text-xs tracking-wider uppercase text-slate-300/80">A Little Story for CNN</div>
+          <div className="flex items-center gap-1">
+            {[0,1,2,3,4].map(i => <div key={i} className={"h-1 w-10 rounded-full " + (i <= scene ? "bg-fuchsia-400" : "bg-slate-700")} />)}
+          </div>
+          <div className="flex gap-2">
+            {scene > 0 && <button onClick={goPrev} className="px-3 py-1.5 text-xs rounded-full bg-slate-800/80 hover:bg-slate-700/80 border border-white/10">Back</button>}
+            {scene < 4 && <button onClick={goNext} className="px-3 py-1.5 text-xs rounded-full bg-fuchsia-500 hover:bg-fuchsia-600">Skip</button>}
+          </div>
+        </div>
+      );
+    }
+
+    function TapHint({ text = "Tap to continue" }){
+      return (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute bottom-4 left-1/2 -translate-x-1/2 text-xs px-3 py-1.5 rounded-full bg-black/40 border border-white/10 backdrop-blur">
+          {text} ▶
+        </motion.div>
+      );
+    }
+
+    // Characters
+    function Him(){
+      return (
+        <svg viewBox="0 0 140 160" className="w-20 h-24">
+          <circle cx="70" cy="60" r="38" fill="#f5d0ae" />
+          <path d="M32 58 Q70 30 108 58" fill="#0f172a" />
+          <rect x="38" y="68" width="64" height="6" rx="3" fill="#0ea5e9" />
+          <circle cx="55" cy="72" r="10" fill="#e2e8f0" stroke="#1f2937" />
+          <circle cx="85" cy="72" r="10" fill="#e2e8f0" stroke="#1f2937" />
+          <rect x="65" y="72" width="10" height="2" fill="#1f2937" />
+          <path d="M50 88 Q70 98 90 88" stroke="#b91c1c" strokeWidth="4" fill="none" />
+          <rect x="40" y="112" width="60" height="40" rx="8" fill="#111827" />
+        </svg>
+      );
+    }
+    function Her(){
+      return (
+        <svg viewBox="0 0 140 160" className="w-20 h-24">
+          <circle cx="70" cy="60" r="38" fill="#f5d0ae" />
+          <path d="M30 54 Q70 20 110 54 L110 90 Q88 82 70 82 Q52 82 30 90 Z" fill="#111827" />
+          <rect x="36" y="68" width="68" height="6" rx="3" fill="#f43f5e" />
+          <circle cx="55" cy="72" r="10" fill="#e2e8f0" stroke="#1f2937" />
+          <circle cx="85" cy="72" r="10" fill="#e2e8f0" stroke="#1f2937" />
+          <rect x="65" y="72" width="10" height="2" fill="#1f2937" />
+          <path d="M52 90 Q70 98 88 90" stroke="#b91c1c" strokeWidth="4" fill="none" />
+          <rect x="40" y="112" width="60" height="40" rx="8" fill="#334155" />
+          <circle cx="108" cy="64" r="10" fill="#111827" />
+        </svg>
+      );
+    }
+    function Speech({ children, side="left" }){
+      return <div className={"max-w-[75%] text-sm px-3 py-2 rounded-2xl border border-white/10 bg-white/10 backdrop-blur shadow " + (side==='left' ? 'rounded-tl-sm' : 'rounded-tr-sm')}>{children}</div>;
+    }
+
+    // Scene 0: Bus
+    function SceneBus({ onNext }){
+      const [x, setX] = React.useState(-180);
+      React.useEffect(() => {
+        const id = setInterval(() => setX(v => (v < window.innerWidth - 100 ? v + 6 : v)), 16);
+        const done = setTimeout(() => clearInterval(id), 5200);
+        return () => { clearInterval(id); clearTimeout(done); };
+      }, []);
+      return (
+        <motion.div className="w-full h-dvh relative" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onNext}>
+          <div className="absolute inset-0 bg-gradient-to-b from-sky-300 via-sky-200 to-amber-100" />
+          <Hills /><Road />
+          <motion.div style={{ left: x }} className="absolute bottom-24 w-[160px] h-[80px]" animate={{ y: [0, -2, 0] }} transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}>
+            <BusWithWindows />
+          </motion.div>
+          <div className="absolute inset-x-0 bottom-36 flex items-center justify-center gap-3">
+            <Him />
+            <Speech>First benches, first glances. That’s where our story decided to start.</Speech>
+          </div>
+          <TapHint />
+        </motion.div>
+      );
+    }
+    function BusWithWindows(){
+      return (
+        <svg viewBox="0 0 260 120" className="w-full h-full">
+          <defs><linearGradient id="g1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#fde047" /><stop offset="100%" stopColor="#f59e0b" /></linearGradient></defs>
+          <rect x="10" y="40" width="220" height="60" rx="12" fill="url(#g1)" stroke="#0f172a" strokeWidth="4" />
+          {[30,70,110,150,190].map(x => <rect key={x} x={x} y={50} width="30" height="25" rx="4" fill="#cbd5e1" />)}
+          <circle cx="70" cy="104" r="12" fill="#0f172a" />
+          <circle cx="190" cy="104" r="12" fill="#0f172a" />
+        </svg>
+      );
+    }
+    function Hills(){ return <svg className="absolute inset-x-0 bottom-28 w-full h-40" viewBox="0 0 800 200" preserveAspectRatio="none"><path d="M0,150 C150,50 250,250 400,140 C550,30 650,230 800,120 L800,200 L0,200 Z" fill="#86efac" /></svg>; }
+    function Road(){ return <div className="absolute bottom-0 w-full h-28 bg-slate-800"><div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-2 overflow-hidden"><div className="w-full h-full bg-gradient-to-r from-transparent via-white/70 to-transparent [mask-image:linear-gradient(90deg,transparent,black,transparent)]" /></div></div>; }
+
+    // Scene 1: Bench
+    function SceneBench({ onNext }){
+      const stars = React.useMemo(() => Array.from({ length: 120 }, () => ({
+        id: Math.random().toString(36).slice(2),
+        x: Math.random()*100,
+        y: Math.random()*60+5,
+        s: Math.random()*2+0.7,
+        d: Math.random()*2
+      })), []);
+      return (
+        <motion.div className="relative w-full h-dvh" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onNext}>
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,theme(colors.indigo.900),theme(colors.slate.950))]" />
+          {stars.map(st => <motion.div key={st.id} className="absolute rounded-full bg-white/90" style={{ left: st.x+"%", top: st.y+"%", width: st.s, height: st.s, boxShadow: "0 0 8px rgba(255,255,255,0.6)" }} animate={{ opacity: [0.2,1,0.2] }} transition={{ duration: 2+st.d, repeat: Infinity, delay: st.d }} />)}
+          <div className="absolute inset-x-0 bottom-28 flex items-end justify-center gap-6"><Her /><Him /></div>
+          <div className="absolute inset-x-0 bottom-16 flex items-center justify-center"><Speech side="left">We made a wish for more nights like this.</Speech></div>
+          <TapHint />
+        </motion.div>
+      );
+    }
+
+    // Scene 2: Car
+    function SceneCar({ onNext }){
+      const songs = ["Kesariya", "Ilahi", "Tum Hi Ho"];
+      const [track, setTrack] = React.useState(0);
+      React.useEffect(() => { const id = setInterval(() => setTrack(t => (t+1)%songs.length), 1400); return () => clearInterval(id); }, []);
+      return (
+        <motion.div className="relative w-full h-dvh overflow-hidden" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onNext}>
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,theme(colors.violet.900),theme(colors.slate.950))]" />
+          <CityParallax />
+          <div className="absolute bottom-0 w-full h-32 bg-slate-900 overflow-hidden">
+            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1 w-[200%] bg-[repeating-linear-gradient(90deg,white,white_20px,transparent_20px,transparent_60px)] animate-[roadMove_2s_linear_infinite]" />
+          </div>
+          <style>{`@keyframes roadMove { from { transform: translateX(0); } to { transform: translateX(-50%); } }`}</style>
+          <motion.div className="absolute left-1/2 -translate-x-1/2 bottom-24 flex items-center gap-6" animate={{ y: [0,-2,0] }} transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}>
+            <Car />
+          </motion.div>
+          <div className="absolute inset-x-0 top-6 flex items-center justify-center"><Speech side="left">You changed the songs. He changed the destination.</Speech></div>
+          <div className="absolute inset-x-0 top-20 text-center text-xs opacity-80">Now Playing: {songs[track]}</div>
+          <TapHint />
+        </motion.div>
+      );
+    }
+    function CityParallax(){
+      return (
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute bottom-36 w-[200%] h-24 -left-1/4 bg-[repeating-linear-gradient(90deg,#1f2937,#1f2937_40px,#111827_40px,#111827_80px)] opacity-60 animate-[parallax_12s_linear_infinite]" />
+          <div className="absolute bottom-48 w-[200%] h-16 -left-1/3 bg-[repeating-linear-gradient(90deg,#0f172a,#0f172a_30px,#020617_30px,#020617_60px)] opacity-50 animate-[parallax_18s_linear_infinite]" />
+          <style>{`@keyframes parallax { from { transform: translateX(0); } to { transform: translateX(-50%); } }`}</style>
+        </div>
+      );
+    }
+    function Car(){
+      return (
+        <div className="relative">
+          <svg viewBox="0 0 260 120" className="w-[240px] h-[110px] drop-shadow-[0_6px_24px_rgba(255,0,128,0.35)]">
+            <defs><linearGradient id="car" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#f0abfc" /><stop offset="100%" stopColor="#d946ef" /></linearGradient></defs>
+            <path d="M20 80 L40 50 Q60 20 120 20 L200 20 Q230 20 240 60 L250 80 Z" fill="url(#car)" stroke="#0f172a" strokeWidth="3" />
+            <rect x="90" y="26" width="70" height="24" rx="4" fill="#a5b4fc" />
+            <rect x="165" y="26" width="40" height="24" rx="4" fill="#a5b4fc" />
+            <circle cx="80" cy="80" r="16" fill="#0f172a" />
+            <circle cx="200" cy="80" r="16" fill="#0f172a" />
+            <circle cx="80" cy="80" r="7" fill="#64748b" />
+            <circle cx="200" cy="80" r="7" fill="#64748b" />
+          </svg>
+          <div className="absolute -top-6 left-2 rotate-[-6deg]"><Him /></div>
+          <div className="absolute -top-6 right-2 rotate-[6deg]"><Her /></div>
+        </div>
+      );
+    }
+
+    // Scene 3: Kitchen
+    function SceneKitchen({ onNext }){
+      const shapes = ["heart","triangle","square"];
+      const [i, setI] = React.useState(0);
+      React.useEffect(() => { const id = setInterval(() => setI(v => (v+1)%shapes.length), 1100); return () => clearInterval(id); }, []);
+      const shape = shapes[i];
+      return (
+        <motion.div className="relative w-full h-dvh" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onNext}>
+          <div className="absolute inset-0 bg-gradient-to-b from-amber-50 via-rose-50 to-fuchsia-100/40" />
+          <div className="absolute inset-0 p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="relative bg-white/70 backdrop-blur rounded-2xl border border-white/40 p-4 shadow-xl">
+              <div className="flex items-center gap-3"><Her /><div className="text-sm opacity-80">She flips parathas into little love notes.</div></div>
+              <div className="mt-4 relative h-64 flex items-center justify-center">
+                <Tawa><Paratha shape={shape} /></Tawa>
+              </div>
+            </div>
+            <div className="relative bg-white/70 backdrop-blur rounded-2xl border border-white/40 p-4 shadow-xl">
+              <div className="flex items-center gap-3"><Him /><div className="text-sm opacity-80">He brews chai that tastes like home.</div></div>
+              <div className="mt-4 grid grid-cols-3 gap-3 items-end">
+                <Kettle steaming={true} /><TeaCup filled={true} /><TeaCup filled={true} />
+              </div>
+            </div>
+          </div>
+          <div className="absolute inset-x-0 bottom-6 flex items-center justify-center"><Speech>Paratha hearts. Elaichi steam. Perfect team.</Speech></div>
+          <TapHint />
+        </motion.div>
+      );
+    }
+    function Tawa({ children }){
+      return (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <svg viewBox="0 0 400 260" className="w-[320px] h-[220px]"><rect x="330" y="115" width="70" height="20" rx="10" fill="#0f172a" /><circle cx="180" cy="125" r="100" fill="#111827" /></svg>
+          <div className="absolute">{children}</div>
+        </div>
+      );
+    }
+    function Paratha({ shape }){
+      const common = { fill: "#FACC15", stroke: "#A16207", strokeWidth: 2 };
+      return (
+        <motion.svg viewBox="0 0 200 200" className="w-[160px] h-[160px]" animate={{ rotate: [0,180,360] }} transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}>
+          {shape === "heart" && (<path d="M100 170 C20 120, 20 60, 60 50 C80 50, 100 70, 100 80 C100 70, 120 50, 140 50 C180 60, 180 120, 100 170 Z" {...common} />)}
+          {shape === "triangle" && (<polygon points="100,20 20,160 180,160" {...common} />)}
+          {shape === "square" && (<rect x="30" y="30" width="140" height="140" rx="16" {...common} />)}
+        </motion.svg>
+      );
+    }
+    function Kettle({ steaming }){
+      return (
+        <div className="relative h-40 flex items-end justify-center">
+          <svg viewBox="0 0 140 140" className="w-24 h-24"><rect x="20" y="50" width="100" height="60" rx="8" fill="#64748b" /><rect x="30" y="40" width="80" height="20" rx="6" fill="#94a3b8" /><rect x="100" y="55" width="24" height="10" rx="4" fill="#475569" /></svg>
+          {[0,1,2].map(i => (
+            <motion.div key={i} className="absolute" style={{ bottom: 80, left: 60 + i * 8 }} initial={{ opacity: 0, y: 10 }} animate={{ opacity: [0,1,0], y: [-10, -30 - i * 10] }} transition={{ duration: 2 + i * 0.2, repeat: Infinity, delay: i * 0.3 }}>
+              <div className="w-1 h-6 bg-white/70 rounded-full" />
+            </motion.div>
+          ))}
+        </div>
+      );
+    }
+    function TeaCup({ filled }){
+      return (
+        <div className="h-40 flex items-end justify-center">
+          <svg viewBox="0 0 140 140" className="w-24 h-24">
+            <rect x="30" y="60" width="80" height="40" rx="10" fill="#e2e8f0" stroke="#cbd5e1" />
+            <rect x="100" y="65" width="20" height="20" rx="10" fill="none" stroke="#cbd5e1" strokeWidth="4" />
+            {filled && <rect x="34" y="80" width="72" height="18" rx="8" fill="#b45309" />}
+          </svg>
+        </div>
+      );
+    }
+
+    // Scene 4: Finale
+    function SceneFinal(){
+      const [fired, setFired] = React.useState(false);
+      const [name, setName] = React.useState("CNN");
+      const fire = () => {
+        const count = 200; const defaults = { origin: { y: 0.6 } };
+        const blast = (particleRatio, opts) => confetti({ ...defaults, ...opts, particleCount: Math.floor(count * particleRatio) });
+        blast(0.25, { spread: 26, startVelocity: 55 });
+        blast(0.2, { spread: 60 });
+        blast(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
+        blast(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
+        blast(0.1, { spread: 120, startVelocity: 45 });
+        setFired(true);
+      };
+      return (
+        <motion.div className="relative w-full h-dvh overflow-hidden flex items-center justify-center bg-gradient-to-b from-rose-900 via-fuchsia-900 to-slate-950" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_70%_30%,#f472b6,transparent_40%),radial-gradient(circle_at_30%_70%,#a78bfa,transparent_40%)]" />
+          <motion.div className="relative z-10 w-[92%] md:w-[620px] rounded-3xl border border-white/10 bg-white/10 backdrop-blur p-6 text-center shadow-2xl" initial={{ scale: 0.96, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
+            <div className="flex justify-center gap-4 mb-4"><Her /><Him /></div>
+            <div className="text-2xl md:text-3xl font-bold">Happy Birthday, {name}!</div>
+            <p className="mt-2 text-sm text-slate-200/90">From bus rides to starry skies—can’t wait for the next chapter. ✨</p>
+            <div className="mt-4 flex flex-col sm:flex-row gap-2 items-center justify-center">
+              <input value={name} onChange={e => setName(e.target.value)} placeholder="Edit name" className="px-4 py-2 rounded-full bg-slate-900/60 border border-white/10 focus:outline-none focus:ring-2 focus:ring-fuchsia-400" />
+              <button onClick={fire} className="px-5 py-2 rounded-full bg-fuchsia-500 hover:bg-fuchsia-600 shadow-lg">Launch Confetti 🎉</button>
+            </div>
+            {fired && (<motion.div className="mt-5 text-sm text-slate-200/90" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>Make a wish 💫</motion.div>)}
+          </motion.div>
+          <FloatingHearts />
+        </motion.div>
+      );
+    }
+    function FloatingHearts(){
+      return <>{Array.from({length:14}).map((_,i)=> <motion.div key={i} className="absolute text-2xl" style={{ left: (Math.random()*100)+'%', bottom: -20 }} animate={{ y: [0, -200 - Math.random()*200], opacity: [0.4, 0] }} transition={{ duration: 6 + Math.random()*4, repeat: Infinity, delay: Math.random()*3 }}>💖</motion.div>)}</>;
+    }
+
+    // Mount
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App/>);
+  </script>
+</body>
+</html>
